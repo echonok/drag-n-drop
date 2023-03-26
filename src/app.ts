@@ -49,6 +49,19 @@ class ProjectState extends State<Project> {
   addProject(title: string, description: string, numOfPeople: number) {
     const newProject = new Project(Math.random().toString(), title, description, numOfPeople, EProjectType.ACTIVE)
     this._projects.push(newProject);
+    this.updateListeners()
+  }
+
+  moveProject(projectId: string, newType: EProjectType) {
+    const project = this._projects.find((project) => project.id === projectId);
+    console.log({ project })
+    if (project && project.projectType !== newType) {
+      project.projectType = newType;
+      this.updateListeners();
+    }
+  }
+
+  private updateListeners() {
     this.listeners.forEach((listenerFn) => listenerFn(this._projects.slice()));
   }
 }
@@ -64,13 +77,6 @@ class Project {
     public projectType: EProjectType,
   ) {
   }
-}
-
-interface IProject {
-  id?: string;
-  title: string;
-  description: string;
-  numOfPeople: number;
 }
 
 interface Validatable {
@@ -239,7 +245,8 @@ class ProjectItem extends Component<HTMLUListElement, HTMLLIElement> implements 
 
   @AutoBind
   dragStartHandler(event: DragEvent): void {
-    console.log({ event });
+    event.dataTransfer!.setData('text/plain', this.project.id);
+    event.dataTransfer!.effectAllowed = 'move';
   }
 
   @AutoBind
@@ -263,7 +270,8 @@ class ProjectList extends Component<HTMLDivElement, HTMLElement> implements Drag
   assignProjects: Project[];
 
   constructor(
-    private _type: EProjectType
+
+    private _type: EProjectType,
   ) {
     super('project-list', 'app', false, `${_type}-projects`);
     this.assignProjects = [];
@@ -272,19 +280,23 @@ class ProjectList extends Component<HTMLDivElement, HTMLElement> implements Drag
   }
 
   @AutoBind
-  dragOverHandler(_: DragEvent): void {
-    const listEl = this.element.querySelector('ul')!;
-    listEl.classList.add('droppable');
+  dragOverHandler(event: DragEvent): void {
+    if (event.dataTransfer && event.dataTransfer.types[0] === 'text/plain') {
+      event.preventDefault();
+      const listEl = this.element.querySelector('ul')!;
+      listEl.classList.add('droppable');
+    }
   }
 
-  dropHandler(_: DragEvent): void {
-    throw new Error('Method not implemented.');
+  @AutoBind
+  dropHandler(event: DragEvent): void {
+    const projectId = event.dataTransfer!.getData('text/plain');
+    projectState.moveProject(projectId, this._type !== EProjectType.ACTIVE ? EProjectType.FINISHED : EProjectType.ACTIVE);
   }
 
   @AutoBind
   dragLeaveHandler(_: DragEvent): void {
     const listEl = this.element.querySelector('ul')!;
-    console.log('dragLeaveHandler', listEl)
     listEl.classList.remove('droppable');
   }
 
