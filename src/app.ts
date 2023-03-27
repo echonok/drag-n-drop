@@ -1,6 +1,6 @@
-import { ProjectInput } from './components/project-input.component.js';
-import { ProjectList } from './components/project-list.component.js';
-import { EProjectType } from './models/project.model.js';
+import { ProjectInput } from './components/project-input.component';
+import { ProjectList } from './components/project-list.component';
+import { EProjectType } from './models/project.model';
 
 new ProjectInput();
 new ProjectList(EProjectType.ACTIVE);
